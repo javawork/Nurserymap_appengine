@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+    <style type="text/css">
+      html { height: 100% }
+      body { height: 100%; margin: 0; padding: 0 }
+      #map_canvas { height: 100% }
+
+      /* mask popup */
+       #mask {  
+         position:absolute;  
+         z-index:9000;  
+         background-color:#000;  
+         display:none;  
+         left:0;
+         top:0;
+       } 
+        
+      /*
+       팝업으로 뜨는 윈도우 css  
+      */ 
+       .popup_div{
+         display: none;
+         position:absolute;  
+         left:50%;
+         top:50px;
+         margin-left: -500px;
+         width:1000px;
+         height:500px;
+         background-color:#FFF;
+         z-index:10000;   
+       }
+    </style>
+    <script type="text/javascript" src="js/jquery-1.9.1.min.js"></script>
+    <script type="text/javascript" src="js/main_rect.js"></script>
+    <script type="text/javascript"
+      src="http://maps.googleapis.com/maps/api/js?key=AIzaSyAegf4mh9H6aLQorwoGvI9-t8PYwomYXMo&sensor=true">
+    </script>
+  </head>
+  <body>
+    <div id="map_canvas" style="width:100%; height:100%"></div>
+  </body>
+</html>
