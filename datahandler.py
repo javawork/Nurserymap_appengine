@@ -140,22 +140,22 @@ class DataHandler(webapp2.RequestHandler):
 	def querybox(self, lat, lng, zoom):
 		delta = 0.0
 		if int(zoom) <= 10:
-			delta = 0.05
+			delta = 0.1
 		elif int(zoom) <= 12:
-			delta = 0.025
+			delta = 0.05
 		elif int(zoom) <= 14:
-			delta = 0.01
+			delta = 0.025
 		elif int(zoom) <= 16:
-			delta = 0.005
+			delta = 0.01
 		elif int(zoom) <= 18:
-			delta = 0.0025
+			delta = 0.005
 		else:
-			delta = 0.001
+			delta = 0.0025
 
 		lat_f = float(lat) - 90.0
 		lng_f = float(lng)
-		results = NurseryModel2.bounding_box_fetch(
-			NurseryModel2.all(),  # Rich query!
+		results = NurseryModel3.bounding_box_fetch(
+			NurseryModel3.all(),  # Rich query!
 			geotypes.Box(lat_f+delta, lng_f+delta, lat_f-delta, lng_f-delta),
 			max_results=1000)
 
