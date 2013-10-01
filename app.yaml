@@ -15,9 +15,16 @@ handlers:
 - url: /js
   static_dir: js
 
+- url: /img
+  static_dir: img
+
 - url: /maptest
   static_files: maptest.html
   upload: maptest.html
+
+- url: /
+  static_files: index.html
+  upload: index.html
 
 - url: /recttest
   static_files: recttest.html

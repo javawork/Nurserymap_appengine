@@ -60,10 +60,12 @@ function build_text_for_infowindow( entry ) {
     + entry['address'] 
     + '</td></tr>'
     + '<tr><td>'
-    + entry['own'] + ' / ' + entry['auth']
+    + entry['phone'] + ' / ' + entry['own'] + ' / ' + entry['auth']
     + '</td></tr>'
     + '<tr><td>'
-    + '정원 : ' + entry['capacity'] + ' / ' + entry['phone']
+    + '정원 : ' + entry['capacity'] + '&nbsp; '
+    + '<a href="http://m.childcare.go.kr/nursery/neighbored_foundSlPL.jsp?stcode='+entry['id']+'&flag=BISl" target="_blank">'
+    + '<img src="img/detail_btn.gif" align="top">' + '</a>'
     + '</td></tr>'
     + '</table>';  
 }
@@ -165,12 +167,7 @@ function do_search( area1, area2 ) {
       counter = counter + 1;
     });
 
-    alert( 'Total : ' +
-      //sumOfLng.toString() + '/' +
-      //minLat.toString() + '/' +
-      //maxLat.toString() + '/' +
-      counter.toString()
-    );
+    //alert( 'Total : ' + counter.toString() );
 
     if (counter > 0) {
       var centerLng = sumOfLng/counter;
@@ -182,10 +179,70 @@ function do_search( area1, area2 ) {
         window.map.setZoom(zoomLevel);
       }
     } else {
-      //alert('Nothing');
+      alert('해당 지역에 어린이집이 없습니다.');
     }
     //alert(i);
   });
+}
+
+function complete_search_bypos( data ) {
+  //cleanup_prev_spots();
+  var index = window.spot.marker.length;
+  $.each(data, function(entryIndex, entry) {
+    if ( !displayableOwnType(entry['own']) )
+      return true;
+    
+    if ( entry['id'] in window.spot.idset )
+      return true;
+
+    window.spot.idset[entry['id']] = true;
+
+    info_text = build_text_for_infowindow(entry);
+    window.spot.infowindow[index] = new google.maps.InfoWindow({
+      content: info_text
+    });
+
+    var icon_filename = get_icon_filename(entry['own']);
+
+    var lng = parseFloat(entry['lng'])
+    var lat = parseFloat(entry['lat'])
+    window.spot.marker[index] = new google.maps.Marker({
+      position: new google.maps.LatLng(lng, lat),
+      map: window.map,
+      title: entry['title'],
+      icon: 'http://maps.google.com/mapfiles/ms/icons/' + icon_filename
+    });
+
+    window.mc.addMarker(window.spot.marker[index]);
+
+    window.spot.marker[index].index = index;
+
+    google.maps.event.addListener(window.spot.marker[index], 'click', function() {
+      for (var j=0; j<window.spot.infowindow.length; ++j) {
+        window.spot.infowindow[j].close();
+      }
+      window.spot.infowindow[this.index].open(window.map, window.spot.marker[this.index]);
+    });
+
+    index = index + 1;
+  });
+  //alert( 'Total : ' + i.toString());
+  window.waiting_response = false;
+}
+
+function get_delta(zoom) {
+  if (zoom <= 10)
+    return 0.05;
+  else if (zoom <= 12)
+    return 0.025;
+  else if (zoom <= 14)
+    return 0.01;
+  else if (zoom <= 16)
+    return 0.005;
+  else if (zoom <= 18)
+    return 0.0025;
+  else 
+    return 0.001; 
 }
 
 function do_search_bypos( lat, lng ) {
@@ -203,51 +260,37 @@ function do_search_bypos( lat, lng ) {
   window.map.setCenter(new google.maps.LatLng(lat, lng));
   var zoomLevel = window.map.getZoom();
   request_url = 'data/querybox';
-  $.getJSON(request_url,{'lat':lng.toString(), 'lng':lat.toString(), 'zoom':zoomLevel.toString()},function(data) {
 
-    //cleanup_prev_spots();
-    var index = window.spot.marker.length;
-    $.each(data, function(entryIndex, entry) {
-      //alert( entry['title']+'/' + entry['own'] +'/'+ showResult.toString() );
-      if ( !displayableOwnType(entry['own']) )
-        return true;
-      
-      if ( entry['id'] in window.spot.idset )
-        return true;
+  var delta = get_delta(zoomLevel);
+  var north = lng + delta*0.8;
+  var east = lat + delta*0.8;
+  var south = lng - delta*0.8;
+  var west = lat - delta*0.8;
+  $.getJSON(request_url,{'result':'100', 'north':north.toString(),'east':east.toString(),'south':south.toString(),'west':west.toString()},function(data) {
+    complete_search_bypos(data);
+  });
 
-      window.spot.idset[entry['id']] = true;
+  north = lng + delta*3;
+  east = lat + delta*2;
+  south = lng - delta*3;
+  west = lat - delta*2;
+/*
+  var rectangle = new google.maps.Rectangle({
+    strokeColor: '#FF0000',
+    strokeOpacity: 0.8,
+    strokeWeight: 2,
+    fillColor: '#00FF00',
+    fillOpacity: 0.1,
+    map: window.map,
+    bounds: new google.maps.LatLngBounds(
+      new google.maps.LatLng( west, south), 
+      new google.maps.LatLng( east, north)
+    )
+  });
+*/
 
-      info_text = build_text_for_infowindow(entry);
-      window.spot.infowindow[index] = new google.maps.InfoWindow({
-        content: info_text
-      });
-
-      var icon_filename = get_icon_filename(entry['own']);
-
-      var lng = parseFloat(entry['lng'])
-      var lat = parseFloat(entry['lat'])
-      window.spot.marker[index] = new google.maps.Marker({
-        position: new google.maps.LatLng(lng, lat),
-        map: window.map,
-        title: entry['title'],
-        icon: 'http://maps.google.com/mapfiles/ms/icons/' + icon_filename
-      });
-
-      window.mc.addMarker(window.spot.marker[index]);
-
-      window.spot.marker[index].index = index;
-
-      google.maps.event.addListener(window.spot.marker[index], 'click', function() {
-        for (var j=0; j<window.spot.infowindow.length; ++j) {
-          window.spot.infowindow[j].close();
-        }
-        window.spot.infowindow[this.index].open(window.map, window.spot.marker[this.index]);
-      });
-
-      index = index + 1;
-    });
-    //alert( 'Total : ' + i.toString());
-    window.waiting_response = false;
+  $.getJSON(request_url,{'result':'1000', 'north':north.toString(),'east':east.toString(),'south':south.toString(),'west':west.toString()},function(data) {
+    complete_search_bypos(data);
   });
 }
 

@@ -49,10 +49,15 @@ class DataHandler(webapp2.RequestHandler):
 			zoom = self.request.get("zoom")
 			self.querydistance(lat, lng, zoom)
 		elif sub_url == 'querybox':
-			lat = self.request.get("lat")
-			lng = self.request.get("lng")
-			zoom = self.request.get("zoom")
-			self.querybox(lat, lng, zoom)
+			#lat = self.request.get("lat")
+			#lng = self.request.get("lng")
+			#zoom = self.request.get("zoom")
+			north = self.request.get("north")
+			east = self.request.get("east")
+			south = self.request.get("south")
+			west = self.request.get("west")
+			result = self.request.get("result")
+			self.querybox(north, east, south, west, result)
 		elif sub_url == 'test':
 			id = self.request.get("id")
 			self.test(id)
@@ -137,27 +142,12 @@ class DataHandler(webapp2.RequestHandler):
 
 		self.response.write( '%s'%json.dumps(nursery_list) )
 
-	def querybox(self, lat, lng, zoom):
-		delta = 0.0
-		if int(zoom) <= 10:
-			delta = 0.1
-		elif int(zoom) <= 12:
-			delta = 0.05
-		elif int(zoom) <= 14:
-			delta = 0.025
-		elif int(zoom) <= 16:
-			delta = 0.01
-		elif int(zoom) <= 18:
-			delta = 0.005
-		else:
-			delta = 0.0025
-
-		lat_f = float(lat) - 90.0
-		lng_f = float(lng)
+	def querybox(self, north, east, south, west, result):
 		results = NurseryModel3.bounding_box_fetch(
 			NurseryModel3.all(),  # Rich query!
-			geotypes.Box(lat_f+delta, lng_f+delta, lat_f-delta, lng_f-delta),
-			max_results=1000)
+			geotypes.Box(float(north)-90.0, float(east), float(south)-90.0, float(west)),
+			#geotypes.Box(lat_f+delta, lng_f+delta, lat_f-delta, lng_f-delta),
+			max_results=int(result))
 
 		nursery_list = []
 		for n in results:

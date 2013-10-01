@@ -54,16 +54,28 @@ function wrapWindowByMask(){
 }
 
 $(document).ready(function(){
-    //검은 막 띄우기
+
     $('.openMask').click(function(e){
         e.preventDefault();
         wrapWindowByMask();
     });
-    //닫기 버튼을 눌렀을 때
+
     $('.popup_div .close_btn').click(function (e) {  
-        //링크 기본동작은 작동하지 않도록 한다.
         e.preventDefault();  
         $('#mask, .popup_div').hide();  
+    });
+
+    $('.notice_close_btn').click(function (e) {  
+
+      $( "#notice_div" ).animate({
+        height: "0px"
+      }, 100 );
+
+      $( "#map_canvas" ).animate({
+          height: "100%"
+      }, 100, function() {
+          window.map.relayout();
+      }); 
     });
 });
 
@@ -93,10 +105,7 @@ function HomeControl(controlDiv, map) {
   controlText.innerHTML = '<strong>지역선택</strong>';
   controlUI.appendChild(controlText);
 
-  //chicago = new google.maps.LatLng(37.5663176911162, 126.97782838162229)
-  // Setup the click event listeners: simply set the map to Chicago.
   google.maps.event.addDomListener(controlUI, 'click', function() {
-    //map.setCenter(chicago)
     wrapWindowByMask();
   });
 }

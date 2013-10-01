@@ -6,5 +6,5 @@ cron:
 
 - description: convert nursery3
   url: /collect/addnursery3
-  schedule: every 10 minutes
+  schedule: every 20 minutes
   timezone: Asia/Seoul

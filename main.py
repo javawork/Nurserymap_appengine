@@ -37,12 +37,12 @@ from google.appengine.api import memcache
 
 import webapp2
 
-class MainHandler(webapp2.RequestHandler):
-    def get(self):
-        self.response.write('Hello world!')
+#class MainHandler(webapp2.RequestHandler):
+#    def get(self):
+#        self.redirect("/maptest")
 
 app = webapp2.WSGIApplication([
-    ('/', MainHandler),
+    #('/', MainHandler),
     ('/collect/(\w+)', CollectHandler),
     ('/data/(\w+)', DataHandler),
 ], debug=True)
