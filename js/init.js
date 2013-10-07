@@ -35,19 +35,12 @@ $( document ).ajaxStop(function() {
   stop_spin();
 });
 
-/**
- * The HomeControl adds a control to the map that simply
- * returns the user to Chicago. This constructor takes
- * the control DIV as an argument.
- */
 function wrapWindowByMask(){
-    //화면의 높이와 너비를 구한다.
     var maskHeight = $(document).height();  
     var maskWidth = $(window).width();
 
-    //마스크의 높이와 너비를 화면 것으로 만들어 전체 화면을 채운다.
     $('#mask').css({'width':maskWidth,'height':maskHeight});  
-    //애니메이션 효과 - 일단 0초동안 까맣게 됐다가 60% 불투명도로 간다.
+
     $('#mask').fadeIn(0);      
     $('#mask').fadeTo("slow",0.6);    
     $('.popup_div').show();

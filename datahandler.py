@@ -49,9 +49,6 @@ class DataHandler(webapp2.RequestHandler):
 			zoom = self.request.get("zoom")
 			self.querydistance(lat, lng, zoom)
 		elif sub_url == 'querybox':
-			#lat = self.request.get("lat")
-			#lng = self.request.get("lng")
-			#zoom = self.request.get("zoom")
 			north = self.request.get("north")
 			east = self.request.get("east")
 			south = self.request.get("south")
@@ -59,8 +56,9 @@ class DataHandler(webapp2.RequestHandler):
 			result = self.request.get("result")
 			self.querybox(north, east, south, west, result)
 		elif sub_url == 'test':
-			id = self.request.get("id")
-			self.test(id)
+			lat = self.request.get("lat")
+			lng = self.request.get("lng")
+			self.test(lat, lng)
 		elif sub_url == 'count':
 			self.count()
 		elif sub_url == 'nursery3all':
@@ -87,7 +85,7 @@ class DataHandler(webapp2.RequestHandler):
 		self.response.write( '%s'%json.dumps(nursery_list) )
 
 	def query(self, area1, area2):
-		qry = ndb.gql("SELECT * FROM NurseryModel WHERE area1='%s' AND area2='%s'"%(area1, area2))
+		qry = NurseryModel3.all().filter('area1 =', area1).filter('area2 =', area2)
 		result = qry.fetch(2000)
 
 		nursery_list = []
@@ -96,8 +94,8 @@ class DataHandler(webapp2.RequestHandler):
 			item['id'] = n.id;
 			item['title'] = n.title;
 			item['address'] = n.address;
-			item['lng'] = n.lng;
-			item['lat'] = n.lat;
+			item['lat'] = n.location.lat + 90.0;
+			item['lng'] = n.location.lon;
 			item['own'] = n.own;
 			item['auth'] = n.auth;
 			item['capacity'] = n.capacity;
@@ -170,9 +168,6 @@ class DataHandler(webapp2.RequestHandler):
 		nursery_count = NurseryModel.query().count()
 		self.response.write( 'Nursery = %d<br/>'%(nursery_count))
 
-		#nursery_count3 = ndb.gql("SELECT * FROM NurseryModel3").count()		
-		#ndb.delete_multi(qry.fetch(999999, keys_only=True))
-
 		nursery2_result = NurseryModel2.all(keys_only = True).fetch(999999)
 		self.response.write( 'Nursery2 = %d<br/>'%(len(nursery2_result)))
 
@@ -182,17 +177,19 @@ class DataHandler(webapp2.RequestHandler):
 		offset3 = getoffset3()
 		self.response.write( 'Offset = %d<br/>'%(offset3))
 
+		page_count_total = PageModel.query().count(999999)
+		page_count_gt0 = PageModel.query(PageModel.count > 0).count(999999)
+		self.response.write( 'Page = %d / %d<br/>'%(page_count_gt0, page_count_total) )
+
 	def nursery3all(self):
 		nursery3_result = NurseryModel3.all().fetch(999999)
 		for n in nursery3_result:
 			self.response.write('%s %s<br/>'%(n.id, n.title))
 
-	def test(self, id):
-		result = NurseryModel3.all().filter('id =', id).fetch(1)
-		#result = qry.fetch(1)
-		#if len(result) > 0:
-		if result:
-			self.response.write('%s exist.<br/>'%(id))
-		else:
-			self.response.write('%s not exist.<br/>'%(id))
+	def test(self, lat, lng):
+		model = NurseryModel4(
+			location=ndb.GeoPt(float(lng)-90.0, float(lat)),
+			id = '11119999' )
+		model.update_location()
+		model.put()	
 

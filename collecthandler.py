@@ -17,6 +17,10 @@ from google.appengine.api import memcache
 
 import webapp2
 
+import sys
+reload(sys)
+sys.setdefaultencoding('utf-8')
+
 def get_between_str(str, start, end):
 	pos1 = str.find(start)
 	if pos1 == -1:
@@ -141,28 +145,45 @@ def get_area_data():
 		k = n.put()
 		return k.urlsafe(), n.area1, n.area2
 
-	return '', '', ''	
+	return '', '', ''
+
+def insert_error_nursery(id, area1, area2):
+	result = ErrorNurseryModel.query(ErrorNurseryModel.id == id).fetch(1)
+	if result:
+		return
+
+	model = ErrorNurseryModel(
+		parent=ndb.Key("page", '*notitle*'),
+			id = id,
+			area1 = area1,
+			area2 = area2
+	)
+	model.put()
 
 def insert_nursery(id, title, address, lng_str, lat_str, own, auth, capacity, phone, area1, area2):
 	try:
+		result = NurseryModel3.all().filter('id =', id).fetch(1)
+		if result:
+			return False
+
 		lng_float = float(lng_str)
 		lat_float = float(lat_str)
 
-		model = NurseryModel(
-			parent=ndb.Key('nursery', '*notitle*'),
+		model = NurseryModel3(
+			location=ndb.GeoPt(lat_float-90.0, lng_float),
 			id = id,
 			title = title,
 			address = address,
-			lng = lng_float,
-			lat = lat_float,
 			own = own,
 			auth = auth,
 			capacity = capacity,
 			phone = phone,
 			area1 = area1,
 			area2 = area2 )
+		model.update_location()
 		model.put()
 	except:
+		insert_error_nursery(id, area1, area2)
 		return False
 
 	return True
@@ -228,68 +249,6 @@ def insert_area(area1, area2, desc):
 		)
 	model.put()
 
-def update_rect(area1, area2, minLng, minLat, maxLng, maxLat, centerLng, centerLat):
-	qry = ndb.gql("SELECT * FROM RectModel WHERE area1='%s' AND area2='%s'"%(area1, area2))
-	result = qry.fetch(1)
-	if len(result) == 0:
-		return False
-
-	k = result[0].put()
-	urlString = k.urlsafe()
-
-	lat = float(centerLat)
-	if lat > 90:
-		lat = lat - 90
-	elif lat < -90:
-		lat = lat + 90
-
-	lng = float(centerLng)
-	if lng > 180:
-		lng = lng - 180
-	elif lng < -180:
-		lng = lng + 180
-
-	rev_key = ndb.Key(urlsafe=urlString)
-	model = rev_key.get()
-	model.minLng = float(minLng)
-	model.minLat = float(minLat)
-	model.maxLng = float(maxLng)
-	model.maxLat = float(maxLat)
-	model.centerLng = float(centerLng)
-	model.centerLat = float(centerLat)
-	model.geoHash = str(Geohash((model.centerLat, model.centerLng)))
-	model.geopt = ndb.GeoPt(lat, lng)
-	model.put()
-	return True
-
-def insert_rect(area1, area2, minLng, minLat, maxLng, maxLat, centerLng, centerLat):
-	lat = float(centerLat)
-	if lat > 90:
-		lat = lat - 90
-	elif lat < -90:
-		lat = lat + 90
-
-	lng = float(centerLng)
-	if lng > 180:
-		lng = lng - 180
-	elif lng < -180:
-		lng = lng + 180
-
-	model = RectModel(
-		parent=ndb.Key("rect", '*notitle*'),
-			area1 = area1,
-			area2 = area2,
-			minLng = float(minLng),
-			minLat = float(minLat),
-			maxLng = float(maxLng),
-			maxLat = float(maxLat),
-			centerLng = float(centerLng),
-			centerLat = float(centerLat),
-			geoHash = str(Geohash((float(centerLat), float(centerLng)))),
-			geopt = ndb.GeoPt(lat, lng)
-		)
-	model.put()
-
 def insert_page(offset, area1, area2):
 	model = PageModel(
 		parent=ndb.Key("page", '*notitle*'),
@@ -343,12 +302,15 @@ class CollectHandler(webapp2.RequestHandler):
 			self.remainarea()
 		elif sub_url == 'delnursery':
 			self.delnursery()
-		elif sub_url == 'addrect':
-			self.addrect()
 		elif sub_url == 'addnursery2':
 			self.addnursery2()
 		elif sub_url == 'addnursery3':
 			self.addnursery3()
+		elif sub_url == 'addnurserybyid':
+			id = self.request.get("id")
+			area1 = self.request.get("area1")
+			area2 = self.request.get("area2")
+			self.add_nursery_byid(id, area1, area2)
 
 	def addnursery3(self):
 		offset = getoffset3()
@@ -415,24 +377,19 @@ class CollectHandler(webapp2.RequestHandler):
 		area2 = self.request.get("area2")
 		insert_page(int(offset), area1, area2)
 
-	def addrect(self):
-		area1 = self.request.get("area1")
-		area2 = self.request.get("area2")
-		minLng = self.request.get("minLng")
-		minLat = self.request.get("minLat")
-		maxLng = self.request.get("maxLng")
-		maxLat = self.request.get("maxLat")
-		centerLng = self.request.get("centerLng")
-		centerLat = self.request.get("centerLat")
-		#self.response.write('%s, %s, %s<br/>'%(area1, area2, desc))
-
-		if not update_rect(area1, area2, minLng, minLat, maxLng, maxLat, centerLng, centerLat):
-			insert_rect(area1, area2, minLng, minLat, maxLng, maxLat, centerLng, centerLat)
-
 	def delpage(self):
 		pass
 		#qry = ndb.gql("SELECT * FROM PageModel")		
 		#ndb.delete_multi(qry.fetch(999999, keys_only=True))
+		'''
+		result = PageModel.query( PageModel.count > 0 ).fetch(1000)
+		update_result = []
+		for n in result:
+			self.response.write('%s %s %d<br/>'%(n.area1, n.area2, n.count) )
+			n.count = 0
+			update_result.append(n)
+		ndb.put_multi(update_result)
+		'''
 
 	def delnursery(self):
 		pass
@@ -531,20 +488,30 @@ class CollectHandler(webapp2.RequestHandler):
 			cur_str = whole_str[start:end]
 			id = get_id(cur_str)
 
-			detail_content = fetch_nursery_detail_content(id)
-			title, address, own, auth, capacity, phone = get_detail(detail_content)
-			if not title:
-				continue
-
-			map_content = fetch_nursery_map_content(id)
-			lat, lng = get_position(map_content)
-			if not lat:
-				continue
-
-			self.response.write('%s %s %s %s %s<br/>'%(id, title, address, lat, lng))
-			self.response.write('%s %s %s %s<br/>'%(own, auth, capacity, phone))
-			if insert_nursery(id, title, address, lat, lng, own, auth, capacity, phone, area1, area2):
+			if self.add_nursery_byid(id, area1, area2):
 				count = count + 1
 			
 		self.response.write('count = %d<br/>'%count)
 		save_page_count(urlString, count)
+
+	def add_nursery_byid(self, id, area1, area2):
+		detail_content = fetch_nursery_detail_content(id)
+		title, address, own, auth, capacity, phone = get_detail(detail_content)
+		if not title:
+			return False
+
+		map_content = fetch_nursery_map_content(id)
+		lat, lng = get_position(map_content)
+		if not lat:
+			return False
+
+		self.response.write('%s<br/>'%(id))
+		self.response.write('%s<br/>'%(title))
+		self.response.write('%s<br/>'%(address))
+		self.response.write('%s %s<br/>'%(lat, lng))
+		self.response.write('%s %s %s %s<br/>'%(own, auth, capacity, phone))
+		if insert_nursery(id, title, address, lat, lng, own, auth, capacity, phone, area1, area2):
+			self.response.write('insert <br/>')
+		else:
+			self.response.write('exist <br/>')
+		return True

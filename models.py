@@ -62,6 +62,10 @@ class NurseryModel3(GeoModel):
 class OffsetModel(ndb.Model):
 	offset3 = ndb.IntegerProperty()
 
+class ErrorNurseryModel(ndb.Model):
+	id = ndb.StringProperty()
+	area1 = ndb.StringProperty()
+	area2 = ndb.StringProperty()
 
 def getoffset3():
 	qry = OffsetModel.query()

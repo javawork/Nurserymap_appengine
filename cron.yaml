@@ -1,10 +1,5 @@
 cron:
-- description: collect list
-  url: /collect/list
-  schedule: every 60 minutes
-  timezone: Asia/Seoul
-
-- description: convert nursery3
-  url: /collect/addnursery3
-  schedule: every 20 minutes
+- description: collect detail
+  url: /collect/detail
+  schedule: every 1 minutes
   timezone: Asia/Seoul

@@ -247,6 +247,10 @@ function get_delta(zoom) {
 
 function do_search_bypos( lat, lng ) {
 
+  //$.getJSON('data/test',{ 'lat':lat.toString(),'lng':lng.toString()},function(data) {
+  //});
+  //return;
+
   $('#mask, .popup_div').hide();
   //alert(lat.toString() + ' / ' + lng.toString());
 
